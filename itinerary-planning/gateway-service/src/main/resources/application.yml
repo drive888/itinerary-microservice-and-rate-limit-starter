@@ -1,0 +1,60 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+        namespace: public
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/user/**
+          filters:
+            - StripPrefix=0
+
+        - id: itinerary-service
+          uri: lb://itinerary-service
+          predicates:
+            - Path=/api/itinerary/**
+          filters:
+            - StripPrefix=0
+
+        - id: destination-service
+          uri: lb://destination-service
+          predicates:
+            - Path=/api/destination/**
+          filters:
+            - StripPrefix=0
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:59324"
+              - "http://127.0.0.1:3000"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+            maxAge: 3600
+
+jwt:
+  secret: fanone_itinerary_secret_key
+
+logging:
+  level:
+    com.fanone.gateway: DEBUG

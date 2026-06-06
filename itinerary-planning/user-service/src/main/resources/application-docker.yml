@@ -1,0 +1,55 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: user-service
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://host.docker.internal:3307/itinerary_planning?useUnicode=true&characterEncoding=utf-8&connectionCollation=utf8mb4_unicode_ci&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: root123
+    type: com.alibaba.druid.pool.DruidDataSource
+  redis:
+    host: host.docker.internal
+    port: 6379
+  cloud:
+    alibaba:
+      seata:
+        tx-service-group: itinerary_tx_group
+    nacos:
+      discovery:
+        server-addr: host.docker.internal:8848
+        namespace: public
+
+seata:
+  enabled: true
+  application-id: ${spring.application.name}
+  tx-service-group: itinerary_tx_group
+  enable-auto-data-source-proxy: true
+  data-source-proxy-mode: AT
+  registry:
+    type: file
+  config:
+    type: file
+  service:
+    vgroup-mapping:
+      itinerary_tx_group: default
+    grouplist:
+      default: seata-server:8091
+
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+jwt:
+  secret: fanone_itinerary_secret_key
+  expiration: 86400
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

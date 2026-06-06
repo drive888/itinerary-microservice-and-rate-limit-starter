@@ -1,0 +1,105 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: itinerary-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: itinerary_planning
+      MYSQL_USER: fanone
+      MYSQL_PASSWORD: fanone123
+      TZ: Asia/Shanghai
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --init-connect=SET NAMES utf8mb4
+      - --character-set-client-handshake=FALSE
+    networks:
+      - itinerary-network
+
+  seata-server:
+    image: seataio/seata-server:1.6.1
+    container_name: itinerary-seata-server
+    environment:
+      SEATA_PORT: 8091
+      STORE_MODE: file
+      TZ: Asia/Shanghai
+    ports:
+      - "8091:8091"
+    networks:
+      - itinerary-network
+
+  gateway:
+    build:
+      context: ./gateway-service
+      dockerfile: Dockerfile
+    container_name: itinerary-gateway
+    ports:
+      - "8080:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - mysql
+    networks:
+      - itinerary-network
+
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: itinerary-user-service
+    ports:
+      - "8081:8081"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - mysql
+      - seata-server
+    networks:
+      - itinerary-network
+
+  itinerary-service:
+    build:
+      context: ./itinerary-service
+      dockerfile: Dockerfile
+    container_name: itinerary-itinerary-service
+    ports:
+      - "8082:8082"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - mysql
+      - seata-server
+    networks:
+      - itinerary-network
+
+  destination-service:
+    build:
+      context: ./destination-service
+      dockerfile: Dockerfile
+    container_name: itinerary-destination-service
+    ports:
+      - "8083:8083"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 114.114.114.114
+    depends_on:
+      - mysql
+      - seata-server
+    networks:
+      - itinerary-network
+
+volumes:
+  mysql-data:
+
+networks:
+  itinerary-network:
+    driver: bridge

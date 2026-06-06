@@ -1,0 +1,21 @@
+.DS_Store
+
+# IDE
+.idea/
+*.iml
+
+# Build outputs
+target/
+*.class
+*.jar
+*.war
+
+# Logs and runtime files
+logs/
+*.log
+*.pid
+
+# OS / temporary files
+*.tmp
+*.swp
+

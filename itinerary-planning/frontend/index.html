@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行程规划 - 测试面板</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #e0e7ff;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --radius: 10px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
+
+        /* Nav */
+        .nav { background: var(--card); border-bottom: 1px solid var(--border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .nav-title { font-size: 18px; font-weight: 700; color: var(--primary); }
+        .nav-user { font-size: 13px; color: var(--text-muted); }
+        .nav-user span { color: var(--primary); font-weight: 600; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 4px; padding: 16px 24px 0; background: var(--bg); }
+        .tab { padding: 8px 18px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; border-radius: 8px 8px 0 0; font-size: 14px; font-weight: 500; transition: all .2s; }
+        .tab.active { background: var(--card); color: var(--primary); box-shadow: 0 -2px 8px rgba(0,0,0,.05); }
+        .tab:hover:not(.active) { background: var(--primary-light); }
+
+        /* Main */
+        .main { padding: 0 24px 24px; }
+        .panel { display: none; }
+        .panel.active { display: block; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-top: 16px; }
+        .card-title { font-size: 15px; font-weight: 600; margin-bottom: 14px; color: var(--text); }
+
+        /* Form */
+        .form-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+        .form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 160px; }
+        .form-group label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px;
+            transition: border-color .2s; outline: none;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); }
+
+        /* Buttons */
+        .btn { padding: 8px 18px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .2s; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: #4338ca; }
+        .btn-success { background: var(--success); color: #fff; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-warning { background: var(--warning); color: #fff; }
+        .btn-sm { padding: 5px 12px; font-size: 12px; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+        .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* Table */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; padding: 10px 12px; background: #f1f5f9; color: var(--text-muted); font-weight: 600; border-bottom: 2px solid var(--border); white-space: nowrap; }
+        td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+        tr:hover td { background: #f8fafc; }
+
+        /* Badge */
+        .badge { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+        .badge-green { background: #dcfce7; color: #166534; }
+        .badge-yellow { background: #fef9c3; color: #854d0e; }
+        .badge-gray { background: #f1f5f9; color: #475569; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+
+        /* Toast */
+        .toast-container { position: fixed; top: 70px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+        .toast { padding: 12px 20px; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 500; box-shadow: 0 4px 12px rgba(0,0,0,.15); animation: slideIn .3s ease; max-width: 360px; }
+        .toast-success { background: var(--success); }
+        .toast-error { background: var(--danger); }
+        .toast-info { background: var(--primary); }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: translateX(0); } }
+
+        /* Auth overlay */
+        .auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.4); display: flex; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(4px); }
+        .auth-box { background: var(--card); border-radius: 16px; padding: 32px; width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+        .auth-box h2 { text-align: center; margin-bottom: 8px; color: var(--primary); }
+        .auth-box p { text-align: center; color: var(--text-muted); font-size: 13px; margin-bottom: 20px; }
+        .auth-tabs { display: flex; gap: 0; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+        .auth-tab { flex: 1; padding: 10px; text-align: center; border: none; background: #f1f5f9; cursor: pointer; font-weight: 600; font-size: 14px; color: var(--text-muted); transition: all .2s; }
+        .auth-tab.active { background: var(--primary); color: #fff; }
+        .auth-form .form-group { margin-bottom: 14px; }
+        .auth-form .btn { width: 100%; padding: 12px; font-size: 15px; margin-top: 4px; }
+
+        /* Empty state */
+        .empty { text-align: center; padding: 40px; color: var(--text-muted); }
+        .empty-icon { font-size: 40px; margin-bottom: 8px; }
+
+        /* Pagination */
+        .pagination { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; }
+        .page-info { font-size: 13px; color: var(--text-muted); }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .form-row { flex-direction: column; }
+            .nav { padding: 12px 16px; }
+            .main { padding: 0 16px 16px; }
+            .tabs { padding: 12px 16px 0; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Auth Overlay -->
+<div class="auth-overlay" id="authOverlay">
+    <div class="auth-box">
+        <h2>行程规划</h2>
+        <p>登录或注册以开始使用</p>
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="switchAuthTab('login')">登录</button>
+            <button class="auth-tab" onclick="switchAuthTab('register')">注册</button>
+        </div>
+        <!-- Login Form -->
+        <div class="auth-form" id="loginForm">
+            <div class="form-group">
+                <label>用户名</label>
+                <input type="text" id="loginUsername" placeholder="请输入用户名">
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" id="loginPassword" placeholder="请输入密码">
+            </div>
+            <button class="btn btn-primary" onclick="handleLogin()">登 录</button>
+        </div>
+        <!-- Register Form -->
+        <div class="auth-form" id="registerForm" style="display:none">
+            <div class="form-group">
+                <label>用户名</label>
+                <input type="text" id="regUsername" placeholder="请输入用户名">
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" id="regPassword" placeholder="请输入密码">
+            </div>
+            <div class="form-group">
+                <label>邮箱</label>
+                <input type="email" id="regEmail" placeholder="请输入邮箱">
+            </div>
+            <button class="btn btn-primary" onclick="handleRegister()">注 册</button>
+        </div>
+    </div>
+</div>
+
+<!-- Nav -->
+<nav class="nav">
+    <div class="nav-title">行程规划系统</div>
+    <div class="nav-user" id="navUser" style="display:none">
+        欢迎, <span id="navUsername"></span>
+        <button class="btn btn-outline btn-sm" onclick="handleLogout()" style="margin-left:12px">退出</button>
+    </div>
+</nav>
+
+<!-- Tabs -->
+<div class="tabs">
+    <button class="tab active" onclick="switchTab('itinerary')">我的行程</button>
+    <button class="tab" onclick="switchTab('destination')">目的地</button>
+    <button class="tab" onclick="switchTab('api')">API 调试</button>
+</div>
+
+<!-- Main Content -->
+<div class="main">
+
+    <!-- Itinerary Panel -->
+    <div class="panel active" id="panel-itinerary">
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div class="card-title" style="margin:0">我的行程</div>
+                <button class="btn btn-primary btn-sm" onclick="showCreateItinerary()">+ 新建行程</button>
+            </div>
+        </div>
+        <div id="itineraryList"></div>
+
+        <!-- Create Itinerary Form (hidden) -->
+        <div class="card" id="createItineraryForm" style="display:none">
+            <div class="card-title">创建新行程</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>行程标题</label>
+                    <input type="text" id="itiTitle" placeholder="例: 五一北京游">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>开始日期</label>
+                    <input type="date" id="itiStartDate">
+                </div>
+                <div class="form-group">
+                    <label>结束日期</label>
+                    <input type="date" id="itiEndDate">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>描述</label>
+                    <textarea id="itiDesc" rows="2" placeholder="行程描述(可选)"></textarea>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-success" onclick="createItinerary()">创建</button>
+                <button class="btn btn-outline" onclick="document.getElementById('createItineraryForm').style.display='none'">取消</button>
+            </div>
+        </div>
+
+        <!-- Itinerary Detail (hidden) -->
+        <div class="card" id="itineraryDetail" style="display:none">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <div class="card-title" style="margin:0" id="detailTitle"></div>
+                <button class="btn btn-outline btn-sm" onclick="closeItineraryDetail()">返回列表</button>
+            </div>
+            <div id="detailInfo" style="font-size:13px;color:var(--text-muted);margin-bottom:16px"></div>
+
+            <!-- Add Destination to Itinerary -->
+            <div style="display:flex;gap:8px;align-items:end;margin-bottom:16px;flex-wrap:wrap">
+                <div class="form-group" style="min-width:120px;margin-bottom:0">
+                    <label>目的地ID</label>
+                    <input type="number" id="addDestId" placeholder="输入ID">
+                </div>
+                <div class="form-group" style="min-width:80px;margin-bottom:0">
+                    <label>顺序</label>
+                    <input type="number" id="addDestOrder" placeholder="1" value="1">
+                </div>
+                <div class="form-group" style="min-width:120px;margin-bottom:0">
+                    <label>备注</label>
+                    <input type="text" id="addDestNote" placeholder="备注(可选)">
+                </div>
+                <button class="btn btn-success btn-sm" onclick="addDestinationToItinerary()">添加目的地</button>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>顺序</th><th>名称</th><th>城市</th><th>分类</th><th>评分</th><th>备注</th><th>操作</th></tr>
+                    </thead>
+                    <tbody id="detailDestinations"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Destination Panel -->
+    <div class="panel" id="panel-destination">
+        <!-- Scenic Spot Search Card (Amap API) -->
+        <div class="card">
+            <div class="card-title">全国景点搜索</div>
+            <div style="margin-bottom:12px;font-size:12px;color:var(--text-muted)">通过高德地图API搜索全国旅游景点，支持按城市、关键词筛选</div>
+            <div class="form-row">
+                <div class="form-group" style="flex:2;min-width:180px">
+                    <label>关键词</label>
+                    <input type="text" id="amapKeyword" placeholder="如: 故宫、西湖、长城...">
+                </div>
+                <div class="form-group" style="min-width:140px">
+                    <label>城市（可选）</label>
+                    <input type="text" id="amapCity" placeholder="如: 北京、杭州">
+                    <div id="hotCitiesWrap" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px"></div>
+                </div>
+                <div style="align-self:flex-end;display:flex;gap:6px">
+                    <button class="btn btn-primary" onclick="searchScenicSpots()">搜索景点</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+                <div class="card-title" style="margin:0">搜索结果</div>
+                <span id="amapResultCount" style="font-size:12px;color:var(--text-muted)"></span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr><th>名称</th><th>分类</th><th>地址</th><th>城市</th><th>评分</th><th>电话</th><th>操作</th></tr>
+                    </thead>
+                    <tbody id="amapList"></tbody>
+                </table>
+            </div>
+            <div class="pagination" id="amapPagination"></div>
+        </div>
+
+        <!-- Local Destinations -->
+        <div class="card" style="margin-top:16px">
+            <div class="card-title">本地目的地库</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>关键词</label>
+                    <input type="text" id="destKeyword" placeholder="搜索名称/描述">
+                </div>
+                <div class="form-group">
+                    <label>城市</label>
+                    <input type="text" id="destCity" placeholder="筛选城市">
+                </div>
+                <div class="form-group">
+                    <label>分类</label>
+                    <select id="destCategory">
+                        <option value="">全部分类</option>
+                        <option value="景点">景点</option>
+                        <option value="美食">美食</option>
+                        <option value="购物">购物</option>
+                    </select>
+                </div>
+                <div style="align-self:flex-end">
+                    <button class="btn btn-primary btn-sm" onclick="searchDestinations()">搜索</button>
+                </div>
+            </div>
+            <div class="table-wrap" style="margin-top:12px">
+                <table>
+                    <thead>
+                        <tr><th>ID</th><th>名称</th><th>城市</th><th>分类</th><th>评分</th><th>开放时间</th><th>票价</th><th>操作</th></tr>
+                    </thead>
+                    <tbody id="destList"></tbody>
+                </table>
+            </div>
+            <div class="pagination" id="destPagination"></div>
+        </div>
+    </div>
+
+    <!-- Add to Itinerary Modal -->
+    <div class="auth-overlay" id="addToItineraryModal" style="display:none">
+        <div class="auth-box" style="width:420px">
+            <h2>加入行程</h2>
+            <p id="modalPoiName" style="text-align:center;color:var(--primary);font-size:16px;font-weight:600;margin-bottom:16px"></p>
+            <div class="form-group" style="margin-bottom:14px">
+                <label>选择行程</label>
+                <select id="modalItinerarySelect" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px">
+                    <option value="">-- 请选择行程 --</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-bottom:14px">
+                <label>游览顺序</label>
+                <input type="number" id="modalVisitOrder" value="1" min="1" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px">
+            </div>
+            <div class="form-group" style="margin-bottom:14px">
+                <label>备注（可选）</label>
+                <input type="text" id="modalNote" placeholder="如：上午参观" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px">
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-success" style="flex:1;padding:10px" onclick="confirmAddToItinerary()">确认添加</button>
+                <button class="btn btn-outline" style="flex:1;padding:10px" onclick="closeAddToItineraryModal()">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Debug Panel -->
+    <div class="panel" id="panel-api">
+        <div class="card">
+            <div class="card-title">API 调试工具</div>
+            <div class="form-row">
+                <div class="form-group" style="max-width:120px">
+                    <label>方法</label>
+                    <select id="apiMethod">
+                        <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex:3">
+                    <label>URL (基础路径: <span id="apiBase"></span>)</label>
+                    <input type="text" id="apiUrl" placeholder="/api/user/login">
+                </div>
+                <div style="align-self:flex-end">
+                    <button class="btn btn-primary" onclick="sendApiRequest()">发送</button>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>请求体 (JSON)</label>
+                    <textarea id="apiBody" rows="5" placeholder='{"username":"test","password":"123456"}'></textarea>
+                </div>
+            </div>
+            <div style="margin-top:12px">
+                <label style="font-size:12px;color:var(--text-muted);font-weight:500">快捷操作:</label>
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+                    <button class="btn btn-outline btn-sm" onclick="quickApi('POST','/api/user/register','{&quot;username&quot;:&quot;testuser&quot;,&quot;password&quot;:&quot;123456&quot;,&quot;email&quot;:&quot;test@test.com&quot;}')">注册</button>
+                    <button class="btn btn-outline btn-sm" onclick="quickApi('POST','/api/user/login','{&quot;username&quot;:&quot;testuser&quot;,&quot;password&quot;:&quot;123456&quot;}')">登录</button>
+                    <button class="btn btn-outline btn-sm" onclick="quickApi('GET','/api/user/info','')">用户信息</button>
+                    <button class="btn btn-outline btn-sm" onclick="quickApi('GET','/api/itinerary/list','')">行程列表</button>
+                    <button class="btn btn-outline btn-sm" onclick="quickApi('POST','/api/itinerary/create','{&quot;title&quot;:&quot;测试行程&quot;,&quot;startDate&quot;:&quot;2026-05-01&quot;,&quot;endDate&quot;:&quot;2026-05-05&quot;}')">创建行程</button>
+                    <button class="btn btn-outline btn-sm" onclick="quickApi('GET','/api/destination/list','')">目的地列表</button>
+                    <button class="btn btn-outline btn-sm" onclick="quickApi('GET','/api/destination/search?keyword=故宫&city=北京','')">搜索景点</button>
+                    <button class="btn btn-outline btn-sm" onclick="quickApi('GET','/api/destination/search/cities','')">热门城市</button>
+                </div>
+            </div>
+        </div>
+        <div class="card" id="apiResultCard" style="display:none">
+            <div class="card-title">响应结果</div>
+            <div id="apiStatus" style="font-size:12px;margin-bottom:8px"></div>
+            <pre id="apiResult" style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:8px;font-size:12px;overflow-x:auto;max-height:400px;white-space:pre-wrap"></pre>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============ Config ============
+const API_BASE = 'http://localhost:8080';
+document.getElementById('apiBase').textContent = API_BASE;
+
+let token = localStorage.getItem('token') || '';
+let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+let currentItineraryId = null;
+let destPageNum = 1;
+let amapPageNum = 1;
+
+// ============ Init ============
+function init() {
+    if (token && currentUser) {
+        showApp();
+    }
+}
+
+// ============ Auth ============
+function switchAuthTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.auth-tab:${tab === 'login' ? 'first-child' : 'last-child'}`).classList.add('active');
+    document.getElementById('loginForm').style.display = tab === 'login' ? '' : 'none';
+    document.getElementById('registerForm').style.display = tab === 'register' ? '' : 'none';
+}
+
+async function handleLogin() {
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    if (!username || !password) return toast('请输入用户名和密码', 'error');
+    try {
+        const res = await api('POST', '/api/user/login', { username, password });
+        if (res.code === 200) {
+            token = res.data.token;
+            currentUser = { userId: res.data.userId, username: res.data.username, nickname: res.data.nickname };
+            localStorage.setItem('token', token);
+            localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            toast('登录成功', 'success');
+            showApp();
+        } else {
+            toast(res.message || '登录失败', 'error');
+        }
+    } catch (e) {
+        toast('登录失败: ' + e.message, 'error');
+    }
+}
+
+async function handleRegister() {
+    const username = document.getElementById('regUsername').value.trim();
+    const password = document.getElementById('regPassword').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    if (!username || !password || !email) return toast('请填写所有字段', 'error');
+    try {
+        const res = await api('POST', '/api/user/register', { username, password, email });
+        if (res.code === 200) {
+            toast('注册成功，请登录', 'success');
+            switchAuthTab('login');
+            document.getElementById('loginUsername').value = username;
+        } else {
+            toast(res.message || '注册失败', 'error');
+        }
+    } catch (e) {
+        toast('注册失败: ' + e.message, 'error');
+    }
+}
+
+function handleLogout() {
+    token = '';
+    currentUser = null;
+    localStorage.removeItem('token');
+    localStorage.removeItem('currentUser');
+    document.getElementById('authOverlay').style.display = '';
+    document.getElementById('navUser').style.display = 'none';
+}
+
+function showApp() {
+    document.getElementById('authOverlay').style.display = 'none';
+    document.getElementById('navUser').style.display = '';
+    document.getElementById('navUsername').textContent = currentUser.nickname || currentUser.username;
+    loadItineraries();
+}
+
+// ============ API Helper ============
+async function api(method, path, body) {
+    const opts = {
+        method,
+        headers: { 'Content-Type': 'application/json' }
+    };
+    if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+    if (body && method !== 'GET') opts.body = JSON.stringify(body);
+    const res = await fetch(API_BASE + path, opts);
+    return await res.json();
+}
+
+// ============ Tabs ============
+function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('panel-' + name).classList.add('active');
+    if (name === 'itinerary') loadItineraries();
+    if (name === 'destination') {
+        searchDestinations();
+        loadHotCities();
+    }
+}
+
+// ============ Itinerary ============
+async function loadItineraries() {
+    if (!token) return;
+    try {
+        const res = await api('GET', '/api/itinerary/list');
+        if (res.code === 200) {
+            renderItineraries(res.data || []);
+        } else {
+            toast(res.message, 'error');
+        }
+    } catch (e) {
+        toast('加载行程失败', 'error');
+    }
+}
+
+const statusMap = { 0: ['新建', 'badge-yellow'], 1: ['进行中', 'badge-blue'], 2: ['已完成', 'badge-green'] };
+
+function renderItineraries(list) {
+    const el = document.getElementById('itineraryList');
+    if (!list.length) {
+        el.innerHTML = '<div class="card"><div class="empty"><div class="empty-icon">📋</div>暂无行程，点击新建开始规划吧</div></div>';
+        return;
+    }
+    el.innerHTML = list.map(it => {
+        const [statusText, statusBadge] = statusMap[it.status] || ['未知', 'badge-gray'];
+        return `<div class="card" style="cursor:pointer" onclick="openItineraryDetail(${it.id})">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <span style="font-weight:600;font-size:15px">${esc(it.title)}</span>
+                    <span class="badge ${statusBadge}" style="margin-left:8px">${statusText}</span>
+                </div>
+                <div style="display:flex;gap:6px">
+                    ${it.status === 0 ? `<button class="btn btn-warning btn-sm" onclick="event.stopPropagation();updateItineraryStatus(${it.id},1)">开始</button>` : ''}
+                    ${it.status === 1 ? `<button class="btn btn-success btn-sm" onclick="event.stopPropagation();updateItineraryStatus(${it.id},2)">完成</button>` : ''}
+                    ${it.status < 2 ? `<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();updateItineraryStatus(${it.id},0)">重置</button>` : ''}
+                </div>
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:6px">
+                ${it.startDate && it.endDate ? `${it.startDate} ~ ${it.endDate}` : '日期未定'}
+                ${it.description ? ' · ' + esc(it.description) : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function showCreateItinerary() {
+    document.getElementById('createItineraryForm').style.display = '';
+    document.getElementById('itiTitle').value = '';
+    document.getElementById('itiStartDate').value = '';
+    document.getElementById('itiEndDate').value = '';
+    document.getElementById('itiDesc').value = '';
+}
+
+async function createItinerary() {
+    const title = document.getElementById('itiTitle').value.trim();
+    if (!title) return toast('请输入行程标题', 'error');
+    const body = { title };
+    const sd = document.getElementById('itiStartDate').value;
+    const ed = document.getElementById('itiEndDate').value;
+    if (sd) body.startDate = sd;
+    if (ed) body.endDate = ed;
+    const desc = document.getElementById('itiDesc').value.trim();
+    if (desc) body.description = desc;
+    try {
+        const res = await api('POST', '/api/itinerary/create', body);
+        if (res.code === 200) {
+            toast('行程创建成功', 'success');
+            document.getElementById('createItineraryForm').style.display = 'none';
+            loadItineraries();
+        } else {
+            toast(res.message, 'error');
+        }
+    } catch (e) {
+        toast('创建失败', 'error');
+    }
+}
+
+async function updateItineraryStatus(id, status) {
+    try {
+        const res = await api('PUT', `/api/itinerary/${id}/status?status=${status}`);
+        if (res.code === 200) {
+            toast('状态更新成功', 'success');
+            loadItineraries();
+        } else {
+            toast(res.message, 'error');
+        }
+    } catch (e) {
+        toast('更新失败', 'error');
+    }
+}
+
+let currentDetailItineraryId = null;
+
+async function openItineraryDetail(id) {
+    currentDetailItineraryId = id;
+    document.getElementById('itineraryList').style.display = 'none';
+    document.getElementById('itineraryDetail').style.display = '';
+    try {
+        // Get itinerary info
+        const res = await api('GET', `/api/itinerary/${id}`);
+        if (res.code === 200 && res.data) {
+            const it = res.data;
+            const [statusText, statusBadge] = statusMap[it.status] || ['未知', 'badge-gray'];
+            document.getElementById('detailTitle').innerHTML = `${esc(it.title)} <span class="badge ${statusBadge}">${statusText}</span>`;
+            document.getElementById('detailInfo').innerHTML =
+                `${it.startDate && it.endDate ? `${it.startDate} ~ ${it.endDate}` : '日期未定'}${it.description ? ' · ' + esc(it.description) : ''}`;
+        }
+        // Get destinations
+        const destRes = await api('GET', `/api/itinerary/${id}/destinations`);
+        if (destRes.code === 200) {
+            renderDetailDestinations(destRes.data || []);
+        }
+    } catch (e) {
+        toast('加载详情失败', 'error');
+    }
+}
+
+function renderDetailDestinations(list) {
+    const el = document.getElementById('detailDestinations');
+    if (!list.length) {
+        el.innerHTML = '<tr><td colspan="7" class="empty">暂无目的地，在上方添加吧</td></tr>';
+        return;
+    }
+    el.innerHTML = list.map(d => `<tr>
+        <td>${d.visitOrder ?? '-'}</td>
+        <td>${esc(d.name || '-')}</td>
+        <td>${esc(d.city || '-')}</td>
+        <td>${esc(d.category || '-')}</td>
+        <td>${d.rating ?? '-'}</td>
+        <td>${esc(d.note || '-')}</td>
+        <td><button class="btn btn-danger btn-sm" onclick="removeDestination(${currentDetailItineraryId},${d.id})">移除</button></td>
+    </tr>`).join('');
+}
+
+function closeItineraryDetail() {
+    document.getElementById('itineraryList').style.display = '';
+    document.getElementById('itineraryDetail').style.display = 'none';
+    currentDetailItineraryId = null;
+    loadItineraries();
+}
+
+async function addDestinationToItinerary() {
+    if (!currentDetailItineraryId) return;
+    const destId = parseInt(document.getElementById('addDestId').value);
+    if (!destId) return toast('请输入目的地ID', 'error');
+    const order = parseInt(document.getElementById('addDestOrder').value) || 0;
+    const note = document.getElementById('addDestNote').value.trim();
+    try {
+        const res = await api('POST', `/api/itinerary/${currentDetailItineraryId}/destination`, {
+            destinationId: destId, visitOrder: order, note: note || null
+        });
+        if (res.code === 200) {
+            toast('目的地已添加', 'success');
+            document.getElementById('addDestId').value = '';
+            openItineraryDetail(currentDetailItineraryId);
+        } else {
+            toast(res.message, 'error');
+        }
+    } catch (e) {
+        toast('添加失败', 'error');
+    }
+}
+
+async function removeDestination(itineraryId, destinationId) {
+    try {
+        const res = await api('DELETE', `/api/itinerary/${itineraryId}/destination/${destinationId}`);
+        if (res.code === 200) {
+            toast('已移除', 'success');
+            openItineraryDetail(currentDetailItineraryId);
+        } else {
+            toast(res.message, 'error');
+        }
+    } catch (e) {
+        toast('移除失败', 'error');
+    }
+}
+
+// ============ Destination ============
+// --- Scenic Spot Search (Amap API) ---
+async function loadHotCities() {
+    try {
+        const res = await fetch(API_BASE + '/api/destination/search/cities');
+        if (res.ok) {
+            const data = await res.json();
+            if (data.code === 200) {
+                renderHotCities(data.data || []);
+            }
+        }
+    } catch (e) { /* silently fail */ }
+}
+
+function renderHotCities(cities) {
+    const wrap = document.getElementById('hotCitiesWrap');
+    if (!cities.length) return;
+    wrap.innerHTML = '<span style="font-size:11px;color:var(--text-muted);line-height:24px;margin-right:4px">热门:</span>' +
+        cities.map(c => `<button class="btn btn-outline btn-sm" style="font-size:11px;padding:1px 6px;height:22px" onclick="pickCity('${c}')">${esc(c)}</button>`).join('');
+}
+
+function pickCity(city) {
+    document.getElementById('amapCity').value = city;
+    searchScenicSpots();
+}
+
+async function searchScenicSpots(page) {
+    // 没传page参数说明是新搜索，重置到第1页
+    if (page !== undefined && page > 0) {
+        amapPageNum = page;
+    } else {
+        amapPageNum = 1;
+    }
+    const keyword = document.getElementById('amapKeyword').value.trim();
+    const city = document.getElementById('amapCity').value.trim();
+    let url = `/api/destination/search?pageSize=10&pageNum=${amapPageNum}`;
+    if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+    if (city) url += `&city=${encodeURIComponent(city)}`;
+
+    try {
+        const res = await fetch(API_BASE + url);
+        if (!res.ok) {
+            document.getElementById('amapList').innerHTML = '<tr><td colspan="7" class="empty">请求失败: ' + res.status + ' ' + res.statusText + '</td></tr>';
+            toast('搜索失败: ' + res.status + ' ' + res.statusText, 'error');
+            document.getElementById('amapResultCount').textContent = '';
+            document.getElementById('amapPagination').innerHTML = '';
+            return;
+        }
+        const data = await res.json();
+        if (data.code === 200 && data.data) {
+            const list = data.data.list || [];
+            const total = data.data.total || 0;
+            renderScenicSpots(list, total);
+        } else {
+            document.getElementById('amapList').innerHTML = '<tr><td colspan="7" class="empty">搜索失败或无结果</td></tr>';
+            document.getElementById('amapResultCount').textContent = '';
+            document.getElementById('amapPagination').innerHTML = '';
+        }
+    } catch (e) {
+        document.getElementById('amapList').innerHTML = '<tr><td colspan="7" class="empty">请求异常: ' + esc(e.message) + '</td></tr>';
+        toast('搜索请求异常: ' + e.message, 'error');
+    }
+}
+
+function renderScenicSpots(list, total) {
+    const el = document.getElementById('amapList');
+    if (!list.length) {
+        el.innerHTML = '<tr><td colspan="7" class="empty">已到最后一页，没有更多数据了</td></tr>';
+        document.getElementById('amapResultCount').textContent = `共 ${total} 个结果，当前第 ${amapPageNum} 页（已到底）`;
+        // Keep pagination visible so user can go back
+        renderAmapPagination(total);
+        return;
+    }
+    el.innerHTML = list.map((p, idx) => `<tr>
+        <td style="font-weight:600;color:var(--primary)">${esc(p.name)}</td>
+        <td><span class="badge badge-blue">${esc(p.typeDesc)}</span></td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(p.address)}">${esc(p.address || '-')}</td>
+        <td>${esc(p.cityname || p.pname || '-')}</td>
+        <td>${p.rating ? '★' + p.rating : '-'}</td>
+        <td style="color:var(--text-muted);font-size:12px;white-space:nowrap">${esc(p.tel || '-')}</td>
+        <td><button class="btn btn-success btn-sm" onclick="showAddToItineraryModal(${idx})">加入行程</button></td>
+    </tr>`).join('');
+    // 存储当前搜索结果供弹窗使用
+    window.currentAmapResults = list;
+    // Show result count and pagination
+    document.getElementById('amapResultCount').textContent = `共 ${total} 个结果，当前第 ${amapPageNum} 页`;
+    renderAmapPagination(total);
+}
+
+function renderAmapPagination(total) {
+    const pEl = document.getElementById('amapPagination');
+    const pageSize = 10;
+    const totalPages = Math.ceil(total / pageSize) || 1;
+    // Always show pagination if there are results (even if only 1 page of actual data)
+    if (total <= 0) {
+        pEl.innerHTML = '';
+        return;
+    }
+    let btns = `<button class="btn btn-outline btn-sm" onclick="searchScenicSpots(${amapPageNum - 1})" ${amapPageNum <= 1 ? 'disabled' : ''}>上一页</button>`;
+    // Page number buttons (show max 5 pages around current)
+    let start = Math.max(1, amapPageNum - 2);
+    let end = Math.min(totalPages, start + 4);
+    if (end - start < 4) start = Math.max(1, end - 4);
+    for (let i = start; i <= end; i++) {
+        if (i === amapPageNum) {
+            btns += `<span class="page-num active">${i}</span>`;
+        } else {
+            btns += `<button class="btn btn-outline btn-sm page-num-btn" onclick="searchScenicSpots(${i})">${i}</button>`;
+        }
+    }
+    btns += `<button class="btn btn-outline btn-sm" onclick="searchScenicSpots(${amapPageNum + 1})" ${amapPageNum >= totalPages ? 'disabled' : ''}>下一页</button>`;
+    btns += ` <span class="page-info">共 ${totalPages} 页 / ${total} 条</span>`;
+    pEl.innerHTML = btns;
+}
+
+// --- Local Destinations ---
+async function searchDestinations(page) {
+    if (page) destPageNum = page;
+    const keyword = document.getElementById('destKeyword').value.trim();
+    const city = document.getElementById('destCity').value.trim();
+    const category = document.getElementById('destCategory').value;
+    let url = `/api/destination/list?pageNum=${destPageNum}&pageSize=10`;
+    if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+    if (city) url += `&city=${encodeURIComponent(city)}`;
+    if (category) url += `&category=${encodeURIComponent(category)}`;
+    try {
+        const res = await api('GET', url);
+        if (res.code === 200) {
+            renderDestinations(res.data.records || [], res.data);
+        } else {
+            toast(res.message, 'error');
+        }
+    } catch (e) {
+        toast('加载目的地失败', 'error');
+    }
+}
+
+function renderDestinations(list, pageData) {
+    const el = document.getElementById('destList');
+    if (!list.length) {
+        el.innerHTML = '<tr><td colspan="8" class="empty">没有找到目的地</td></tr>';
+        return;
+    }
+    el.innerHTML = list.map(d => `<tr>
+        <td>${d.id}</td>
+        <td>${esc(d.name)}</td>
+        <td>${esc(d.city || '-')}</td>
+        <td>${esc(d.category || '-')}</td>
+        <td>${d.rating ?? '-'}</td>
+        <td>${esc(d.openTime || '-')}</td>
+        <td>${d.ticketPrice ? '¥' + d.ticketPrice : '-'}</td>
+        <td><button class="btn btn-outline btn-sm" onclick="addDestToClipboard(${d.id},'${esc(d.name)}')">复制ID</button></td>
+    </tr>`).join('');
+
+    // Pagination
+    const pEl = document.getElementById('destPagination');
+    if (pageData && pageData.pages > 1) {
+        pEl.innerHTML = `
+            <button class="btn btn-outline btn-sm" ${pageData.current <= 1 ? 'disabled' : ''} onclick="searchDestinations(${pageData.current - 1})">上一页</button>
+            <span class="page-info">${pageData.current} / ${pageData.pages} (共${pageData.total}条)</span>
+            <button class="btn btn-outline btn-sm" ${pageData.current >= pageData.pages ? 'disabled' : ''} onclick="searchDestinations(${pageData.current + 1})">下一页</button>
+        `;
+    } else {
+        pEl.innerHTML = pageData ? `<span class="page-info">共 ${pageData.total} 条</span>` : '';
+    }
+}
+
+function addDestToClipboard(id, name) {
+    navigator.clipboard.writeText(id).then(() => toast(`已复制 ${name} 的ID: ${id}`, 'info'));
+}
+
+// ============ API Debug ============
+function quickApi(method, url, body) {
+    document.getElementById('apiMethod').value = method;
+    document.getElementById('apiUrl').value = url;
+    document.getElementById('apiBody').value = body ? body.replace(/&quot;/g, '"') : '';
+}
+
+async function sendApiRequest() {
+    const method = document.getElementById('apiMethod').value;
+    let url = document.getElementById('apiUrl').value.trim();
+    if (!url) return toast('请输入URL', 'error');
+    const bodyText = document.getElementById('apiBody').value.trim();
+    let body = null;
+    if (bodyText && method !== 'GET') {
+        try { body = JSON.parse(bodyText); } catch { return toast('请求体JSON格式错误', 'error'); }
+    }
+    const startTime = Date.now();
+    try {
+        const opts = { method, headers: { 'Content-Type': 'application/json' } };
+        if (token) opts.headers['Authorization'] = 'Bearer ' + token;
+        if (body) opts.body = JSON.stringify(body);
+        const res = await fetch(API_BASE + url, opts);
+        const elapsed = Date.now() - startTime;
+        const data = await res.json();
+        document.getElementById('apiStatus').innerHTML =
+            `<span style="color:${res.ok ? 'var(--success)' : 'var(--danger)'}">${res.status} ${res.statusText}</span> · ${elapsed}ms`;
+        document.getElementById('apiResult').textContent = JSON.stringify(data, null, 2);
+        document.getElementById('apiResultCard').style.display = '';
+    } catch (e) {
+        document.getElementById('apiStatus').innerHTML = `<span style="color:var(--danger)">请求失败</span>`;
+        document.getElementById('apiResult').textContent = e.message;
+        document.getElementById('apiResultCard').style.display = '';
+    }
+}
+
+// ============ Add Amap POI to Itinerary ============
+let selectedPoiIndex = null;
+
+function showAddToItineraryModal(idx) {
+    if (!token) return toast('请先登录', 'error');
+    selectedPoiIndex = idx;
+    const poi = window.currentAmapResults[idx];
+    document.getElementById('modalPoiName').textContent = poi.name || '未知景点';
+    document.getElementById('modalVisitOrder').value = '1';
+    document.getElementById('modalNote').value = '';
+    // Load user's itineraries for selection
+    loadItinerariesForSelect();
+    document.getElementById('addToItineraryModal').style.display = '';
+}
+
+async function loadItinerariesForSelect() {
+    const sel = document.getElementById('modalItinerarySelect');
+    try {
+        const res = await api('GET', '/api/itinerary/list');
+        sel.innerHTML = '<option value="">-- 请选择行程 --</option>';
+        if (res.code === 200 && res.data && res.data.length) {
+            res.data.forEach(it => {
+                const opt = document.createElement('option');
+                opt.value = it.id;
+                opt.textContent = esc(it.title);
+                sel.appendChild(opt);
+            });
+        } else {
+            sel.innerHTML = '<option value="">暂无行程，请先创建</option>';
+        }
+    } catch (e) {
+        sel.innerHTML = '<option value="">加载失败</option>';
+    }
+}
+
+async function confirmAddToItinerary() {
+    if (selectedPoiIndex == null) return;
+    const itineraryId = document.getElementById('modalItinerarySelect').value;
+    if (!itineraryId) return toast('请选择一个行程', 'error');
+    const poi = window.currentAmapResults[selectedPoiIndex];
+    const order = parseInt(document.getElementById('modalVisitOrder').value) || 1;
+    const note = document.getElementById('modalNote').value.trim();
+    try {
+        const res = await api('POST', '/api/itinerary/add-from-amap', {
+            itineraryId: parseInt(itineraryId),
+            name: poi.name,
+            address: poi.address,
+            cityname: poi.cityname,
+            pname: poi.pname,
+            typeDesc: poi.typeDesc,
+            locationX: poi.locationX,
+            locationY: poi.locationY,
+            tel: poi.tel,
+            visitOrder: order,
+            note: note || null
+        });
+        if (res.code === 200) {
+            toast(`"${poi.name}" 已加入行程`, 'success');
+            closeAddToItineraryModal();
+        } else {
+            toast(res.message || '添加失败', 'error');
+        }
+    } catch (e) {
+        toast('添加失败: ' + e.message, 'error');
+    }
+}
+
+function closeAddToItineraryModal() {
+    document.getElementById('addToItineraryModal').style.display = 'none';
+    selectedPoiIndex = null;
+}
+
+// ============ Utils ============
+function esc(s) { if (s == null) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function toast(msg, type = 'info') {
+    const el = document.createElement('div');
+    el.className = 'toast toast-' + type;
+    el.textContent = msg;
+    document.getElementById('toastContainer').appendChild(el);
+    setTimeout(() => el.remove(), 3000);
+}
+
+// ============ Start ============
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+server:
+  port: 9090
+
+spring:
+  application:
+    name: rate-limit-test
+  redis:
+    host: localhost
+    port: 6379
+
+# 频率控制配置
+rate-limit:
+  enabled: true
+  default-time: 5
+  default-time-unit: SECONDS
+  default-count: 3
+  default-limit-type: IP
+  default-algorithm: SLIDING_WINDOW
+  status-code: 429
+  message: "请求过于频繁，请稍后再试"
