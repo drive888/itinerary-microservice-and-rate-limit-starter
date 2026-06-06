@@ -1,5 +1,8 @@
 package com.fanone.user.controller;
 
+import com.fanone.user.common.Result;
+import com.fanone.user.dto.LoginRequest;
+import com.fanone.user.dto.RegisterRequest;
 import com.fanone.user.entity.User;
 import com.fanone.user.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -42,36 +45,5 @@ public class UserController {
             user.setPassword(null);
         }
         return Result.success(user);
-    }
-
-    // --- 内部类 ---
-    @lombok.Data
-    public static class RegisterRequest {
-        private String username;
-        private String password;
-        private String email;
-    }
-
-    @lombok.Data
-    public static class LoginRequest {
-        private String username;
-        private String password;
-    }
-
-    @lombok.Data
-    @lombok.AllArgsConstructor
-    @lombok.NoArgsConstructor
-    public static class Result<T> {
-        private int code;
-        private String message;
-        private T data;
-
-        public static <T> Result<T> success(T data) {
-            return new Result<>(200, "success", data);
-        }
-
-        public static <T> Result<T> error(String message) {
-            return new Result<>(500, message, null);
-        }
     }
 }

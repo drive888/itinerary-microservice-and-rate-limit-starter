@@ -20,7 +20,6 @@ This repository contains two related Java projects:
 ├── rate-limit-starter
 │   ├── rate-limit-spring-boot-starter
 │   └── rate-limit-starter-test
-└── docs-assets
 ```
 
 ## Itinerary Planning Microservices
@@ -177,4 +176,3 @@ The hot cities API is configured with `@RateLimit` and allows 3 requests per 10 
 - Build outputs, logs, IDE files, and OS temporary files are ignored by `.gitignore`.
 - Do not commit real API keys or production secrets.
 - Database initialization SQL is located in `itinerary-planning/sql/init.sql`.
-

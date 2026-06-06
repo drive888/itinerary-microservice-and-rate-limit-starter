@@ -1,7 +1,9 @@
 package com.fanone.itinerary.controller;
 
+import com.fanone.itinerary.common.Result;
+import com.fanone.itinerary.dto.AddDestinationRequest;
+import com.fanone.itinerary.dto.AddFromAmapRequest;
 import com.fanone.itinerary.entity.Itinerary;
-import com.fanone.itinerary.entity.ItineraryDestination;
 import com.fanone.itinerary.service.ItineraryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -48,8 +50,7 @@ public class ItineraryController {
      * 从高德搜索结果添加景点到行程（先保存到本地目的地表，再关联行程）
      */
     @PostMapping("/add-from-amap")
-    public Result<?> addFromAmap(@RequestBody AddFromAmapRequest request,
-                                  @RequestHeader(value = "X-User-Id", required = false) Long userId) {
+    public Result<?> addFromAmap(@RequestBody AddFromAmapRequest request) {
         Long destId = itineraryService.addFromAmap(
                 request.getItineraryId(), request.getName(), request.getAddress(),
                 request.getCityname(), request.getPname(), request.getTypeDesc(),
@@ -78,45 +79,5 @@ public class ItineraryController {
         itinerary.setStatus(status);
         itineraryService.updateById(itinerary);
         return Result.success(null);
-    }
-
-    // --- 内部类 ---
-    @lombok.Data
-    public static class AddDestinationRequest {
-        private Long destinationId;
-        private Integer visitOrder;
-        private String note;
-    }
-
-    @lombok.Data
-    public static class AddFromAmapRequest {
-        private Long itineraryId;
-        private String name;
-        private String address;
-        private String cityname;
-        private String pname;
-        private String typeDesc;
-        private java.math.BigDecimal locationX;
-        private java.math.BigDecimal locationY;
-        private String tel;
-        private Integer visitOrder;
-        private String note;
-    }
-
-    @lombok.Data
-    @lombok.AllArgsConstructor
-    @lombok.NoArgsConstructor
-    public static class Result<T> {
-        private int code;
-        private String message;
-        private T data;
-
-        public static <T> Result<T> success(T data) {
-            return new Result<>(200, "success", data);
-        }
-
-        public static <T> Result<T> error(String message) {
-            return new Result<>(500, message, null);
-        }
     }
 }

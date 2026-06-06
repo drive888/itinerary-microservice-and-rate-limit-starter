@@ -8,7 +8,6 @@ import com.fanone.user.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -21,9 +20,7 @@ import java.util.concurrent.TimeUnit;
 public class UserService extends ServiceImpl<UserMapper, User> {
 
     private final StringRedisTemplate redisTemplate;
-    // 1. 注入密码编码器
-    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${jwt.secret:fanone_itinerary_secret_key}")
     private String jwtSecret;
@@ -40,7 +37,7 @@ public class UserService extends ServiceImpl<UserMapper, User> {
 
         User user = new User();
         user.setUsername(username);
-        user.setPassword(passwordEncoder.encode(password)); // 实际项目中应加密
+        user.setPassword(passwordEncoder.encode(password));
         user.setEmail(email);
         user.setNickname(username);
         user.setStatus(1);
@@ -50,7 +47,6 @@ public class UserService extends ServiceImpl<UserMapper, User> {
     }
 
     public Map<String, Object> login(String username, String password) {
-        // 3. 先根据用户名查出用户
         User user = this.getOne(new LambdaQueryWrapper<User>()
                 .eq(User::getUsername, username));
 
@@ -58,7 +54,6 @@ public class UserService extends ServiceImpl<UserMapper, User> {
             throw new RuntimeException("用户名或密码错误");
         }
 
-        // 4. 使用 matches 方法比对明文和密文
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new RuntimeException("用户名或密码错误");
         }
@@ -67,10 +62,8 @@ public class UserService extends ServiceImpl<UserMapper, User> {
             throw new RuntimeException("账号已被禁用");
         }
 
-        // 生成JWT Token
         String token = JwtUtil.generateToken(user.getId(), user.getUsername(), jwtSecret, jwtExpiration);
 
-        // 存储到Redis
         redisTemplate.opsForValue().set("token:" + user.getId(), token, jwtExpiration, TimeUnit.SECONDS);
 
         Map<String, Object> result = new HashMap<>();

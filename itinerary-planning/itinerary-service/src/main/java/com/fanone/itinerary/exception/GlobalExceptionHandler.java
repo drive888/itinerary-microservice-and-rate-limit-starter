@@ -1,6 +1,6 @@
 package com.fanone.itinerary.exception;
 
-import com.fanone.itinerary.controller.ItineraryController;
+import com.fanone.itinerary.common.Result;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -8,12 +8,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
-    public ItineraryController.Result<?> handleRuntimeException(RuntimeException e) {
-        return ItineraryController.Result.error(e.getMessage());
+    public Result<?> handleRuntimeException(RuntimeException e) {
+        return Result.error(e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
-    public ItineraryController.Result<?> handleException(Exception e) {
-        return ItineraryController.Result.error("服务器内部错误");
+    public Result<?> handleException(Exception e) {
+        return Result.error("服务器内部错误");
     }
 }

@@ -1,18 +1,19 @@
 package com.fanone.destination.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.fanone.destination.dto.AmapPOI;
+import com.fanone.destination.common.Result;
+import com.fanone.destination.dto.SaveAmapRequest;
 import com.fanone.destination.entity.Destination;
 import com.fanone.destination.service.AmapService;
 import com.fanone.destination.service.DestinationService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
 import com.fanone.ratelimit.annotation.RateLimit;
 import com.fanone.ratelimit.enums.LimitType;
-
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+
 @RestController
 @RequestMapping("/api/destination")
 @RequiredArgsConstructor
@@ -49,7 +50,6 @@ public class DestinationController {
             @RequestParam(defaultValue = "1") int pageNum,
             @RequestParam(defaultValue = "10") int pageSize) {
         Map<String, Object> result = amapService.searchScenicSpots(keyword, city, pageNum, pageSize);
-        // Return paginated structure: { list: [...], total: N }
         return Result.success(result);
     }
 
@@ -94,36 +94,5 @@ public class DestinationController {
                 request.getPname(), request.getTypeDesc(),
                 request.getLocationX(), request.getLocationY(), request.getTel());
         return Result.success(dest);
-    }
-
-    // --- 请求 DTO ---
-    @lombok.Data
-    public static class SaveAmapRequest {
-        private String name;
-        private String address;
-        private String cityname;
-        private String pname;
-        private String typeDesc;
-        private java.math.BigDecimal locationX;
-        private java.math.BigDecimal locationY;
-        private String tel;
-    }
-
-    // --- 内部类 ---
-    @lombok.Data
-    @lombok.AllArgsConstructor
-    @lombok.NoArgsConstructor
-    public static class Result<T> {
-        private int code;
-        private String message;
-        private T data;
-
-        public static <T> Result<T> success(T data) {
-            return new Result<>(200, "success", data);
-        }
-
-        public static <T> Result<T> error(String message) {
-            return new Result<>(500, message, null);
-        }
     }
 }
